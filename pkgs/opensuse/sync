@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+set -e
+
+EXCLUDE=
+INCLUDE=
+
+if [ -f $PKGDIR/rsync.exclude ]; then
+	EXCLUDE="--exclude-from $PKGDIR/rsync.exclude"
+fi
+
+if [ -f $PKGDIR/rsync.include ]; then
+	INCLUDE="--include-from $PKGDIR/rsync.include"
+fi
+
+echo "Synchronization begin at `date -R`..."
+echo "- Source: $SOURCE"
+echo "- Method: RSYNC"
+
+echo 1 > $STEPFILE
+
+set +e
+
+#rsync -rltpHv --partial --chmod=a+rX,u+w,og-w --stats --timeout=7200 --delay-updates $INCLUDE $EXCLUDE --delete-after $SOURCE $TARGET
+
+echo "#################################################################"
+echo " rsync CD/DVD ISO"
+echo "##################################################################"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --delay-updates --exclude .~tmp~/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE kambing.ui.edu::opensuse-cd/ $TARGET/distribution/
+echo "##################################################################"
+echo "rsync stage two to kambing.ui.edu and rsync.opensuse.org"
+echo "#################################################################"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --delay-updates --exclude 10.3/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE kambing.ui.edu::opensuse/distribution/ $TARGET/distribution/
+
+echo "--------------"
+echo "sync stage two"
+echo "--------------"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --max-delete=4000 --delay-updates --delete \
+                --delete-after --delete-excluded  --exclude .~tmp~/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE --exclude 10.3/--delete-after rsync.opensuse.org::opensuse-full/opensuse/distribution/ $TARGET/distribution/
+
+echo "##################################################################"
+echo "rsync for $TARGET/update"
+echo "##################################################################"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --max-delete=4000 --delay-updates --exclude .~tmp~/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE kambing.ui.edu::opensuse/update/ $TARGET/update/
+
+echo "--------------"
+echo "sync stage two"
+echo "--------------"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --max-delete=4000 --delay-updates --delete \
+                --delete-after --delete-excluded  --exclude .~tmp~/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE --delete-after rsync.opensuse.org::opensuse-full/opensuse/update/ $TARGET/update/
+
+echo "##################################################################"
+echo "rsync for $TARGET/repositories/"
+echo "##################################################################"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --max-delete=4000 --delay-updates \
+                $DRYRUNOPT $EXCLUDE $INCLUDE kambing.ui.edu::opensuse/repositories/ $TARGET/repositories/
+
+echo "--------------"
+echo "sync stage two"
+echo "--------------"
+
+rsync -rltvB8192 --timeout 3600 --stats \
+                --exclude timestamp.txt --max-delete=4000 --delay-updates --delete \
+                --delete-after --delete-excluded  --exclude .~tmp~/ \
+                $DRYRUNOPT $EXCLUDE $INCLUDE rsync.opensuse.org::opensuse-hotstuff-160gb/repositories/ $TARGET/repositories/
+
+echo "Synchronization end at `date -R`..."
+
+ERR=$?
+
+# rsync's exit 23 is not really an error
+if [ $ERR -eq 0 -o $ERR -eq 23 ]; then
+	exit 0
+else
+	exit $ERR
+fi
+

@@ -1,0 +1,11 @@
+#!/bin/env bash
+# get LFTP
+# under construction see https://bugs.launchpad.net/bugs/337299
+set -e
+exec lftp -c "
+set ftp:anon-pass mirror@${`hostname -f`:-$TARGET};
+set cmd:verbose yes;
+set list-options -a;
+mirror --continue --delete --no-perms --verbose=3 \
+-x'\.(mirror|notar)' -x'\.in\..*\.' -X'lost+found' $@ $SOURCE/. $TARGET/;
+"

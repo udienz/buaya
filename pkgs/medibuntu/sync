@@ -1,0 +1,46 @@
+#!/bin/bash
+
+. $BASE/lib/common.sh
+
+if [ -f $PKGDIR/rsync.exclude ]; then
+        EXCLUDE="--exclude-from $PKGDIR/rsync.exclude"
+fi
+
+if [ -f $PKGDIR/rsync.include ]; then
+        INCLUDE="--include-from $PKGDIR/rsync.include"
+fi
+
+set -e
+
+echo "Synchronization begin at `date -R`..."
+
+echo "## Sedot: First stage"
+echo "##"
+
+rsync -avh --timeout 3600 --stats --partial --chmod=a+rX,u+w,og-w \
+	--exclude Packages* --exclude Sources* --exclude Release* --exclude ls-lR*  --exclude .~tmp~/ \
+	$jangan $EXCLUDE $INCLUDE $SOURCE/ $TARGET/
+
+echo 2 > $STEPFILE
+#sleep 60
+
+echo 3 > $STEPFILE
+echo "## Sedot: Second stage"
+echo "##"
+
+rsync -avh --timeout 3600 --stats --chmod=a+rX,u+w,og-w \
+ 	        --exclude project/trace/$HOSTNAME --max-delete=4000 --delay-updates --delete \
+ 	        --delete-after --exclude .~tmp~/ \
+		$jangan $DRYRUNOPT $EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
+
+echo 4 > $STEPFILE
+mkdir -p $TARGET/project/trace/
+
+echo 5 > $STEPFILE
+date -u > $TARGET/project/trace/`hostname -f`
+echo "Used SEDOT" >> $TARGET/project/trace/`hostname -f`
+echo "Running on host: `hostname -f`" >> $TARGET/project/trace/`hostname -f`
+
+echo "Synchronization end at `date -R`..."
+ 
+#/srv/mirror/medibuntu/generate-packages-website.sh

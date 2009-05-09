@@ -1,0 +1,16 @@
+#! /bin/sh
+SECRET="$BASE/secret"
+if [ -d "$HOME/.ssh" ]; then
+	SECRET="$HOME/.ssh"
+fi
+
+signalling () {
+  echo Signalling $1
+  ssh -o "StrictHostKeyChecking no" -o "BatchMode yes" -o "User $2" "$1" -i $SECRET/id_rsa-centos sleep 1
+}
+
+TRIGGER_MIRRORS="mirror.upm.edu.my"
+
+for host in $TRIGGER_MIRRORS ; do
+	signalling $host ftpsync
+done

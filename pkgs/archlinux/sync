@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+set -e
+
+EXCLUDE=
+INCLUDE=
+
+if [ -f $PKGDIR/rsync.exclude ]; then
+        EXCLUDE="--exclude-from $PKGDIR/rsync.exclude"
+fi
+
+if [ -f $PKGDIR/rsync.include ]; then
+        INCLUDE="--include-from $PKGDIR/rsync.include"
+fi
+
+echo "Synchronization begin at `date -R`..."
+echo "- Source: $SOURCE"
+echo "- Method: RSYNC"
+
+echo 1 > $STEPFILE
+
+set +e
+
+#chmod 775 $TARGET/
+#chmod +w $TARGET/
+
+rsync -avh --timeout 3600 --stats --chmod=a+rX,u+w,og-w \
+                --max-delete=40000 --delay-updates --delete --partial \
+                --delete-after --delete-excluded  --exclude .~tmp~/ \
+                $EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
+
+echo "Synchronization end at `date -R`..."
+
+ERR=$?
+
+# rsync's exit 23 is not really an error
+if [ $ERR -eq 0 -o $ERR -eq 23 ]; then
+        exit 0
+else
+        exit $ERR
+fi
+

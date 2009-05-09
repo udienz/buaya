@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ -f $PKGDIR/arch.exclude ]; then
+	. $PKGDIR/arch.exclude
+	export ARCH_EXCLUDE
+	# Exclude architectures defined in $ARCH_EXCLUDE
+	for ARCH in $ARCH_EXCLUDE; do
+	ARCHX="\
+		--exclude binary-$ARCH/ \
+		--exclude disks-$ARCH/ \
+		--exclude installer-$ARCH/ \
+		--exclude Contents-$ARCH.gz \
+		--exclude Contents-$ARCH.diff/ \
+		--exclude arch-$ARCH.files \
+		--exclude arch-$ARCH.list.gz \
+		--exclude *_$ARCH.deb \
+		--exclude *_$ARCH.udeb "
+	if [ "$ARCH" = "source" ]; then
+		SOURCE_EXCLUDE="\
+		--exclude source/ \
+		--exclude *.tar.gz \
+		--exclude *.diff.gz \
+		--exclude *.dsc "
+	fi
+	done
+fi
+
+echo 1 > $STEPFILE
+
+echo "Synchronization begin at `date -R`..."
+
+echo "## Sedot: First stage"
+echo "##"
+
+echo "rsync -avh --timeout 3600 --stats --partial --chmod=a+rX,u+w,og-w \
+	--exclude Packages* --exclude Sources* --exclude Release* --exclude ls-lR*  --exclude .~tmp~/ \
+	$EXCLUDE $ARCHX $INCLUDE $SOURCE/ $TARGET/"
+
+echo 2 > $STEPFILE
+#sleep 60
+
+echo 3 > $STEPFILE
+echo "## Sedot: Second stage"
+echo "##"
+
+echo "rsync -avh --timeout 3600 --stats --chmod=a+rX,u+w,og-w \
+ 	        --exclude project/trace/$HOSTNAME --max-delete=4000 --delay-updates --delete \
+ 	        --delete-after --delete-excluded  --exclude .~tmp~/ \
+		$DRYRUNOPT $ARCHX $EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/"
+
+echo 4 > $STEPFILE
+mkdir -p $TARGET/project/trace/
+
+echo 5 > $STEPFILE
+date -u > $TARGET/project/trace/`hostname -f`
+echo "Used SEDOT" >> $TARGET/project/trace/`hostname -f`
+echo "Running on host: `hostname -f`" >> $TARGET/project/trace/`hostname -f`
+
+echo "Synchronization end at `date -R`..."
+ 

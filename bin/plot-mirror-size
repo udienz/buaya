@@ -1,0 +1,117 @@
+#!/bin/bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+#
+# Functions
+#
+
+plot () {
+
+	PKG=$1
+	RRD=$RRDBASE/$PKG.rrd
+
+	if [ ! -f "$RRD" ]; then
+		return 1;
+	fi
+
+	IMGWEEK=$IMGBASE/$PKG.week.png
+	IMGMONTH=$IMGBASE/$PKG.month.png
+	IMGYEAR=$IMGBASE/$PKG.year.png
+
+	COLOR=`get_color $PKG`
+	TITLE=`get_value $BASE/pkgs/$PKG/name`
+
+	# Weekly image
+	
+	rrdtool graph $IMGWEEK \
+		--start -1w \
+		-l 0 \
+		DEF:size=$RRD:size:AVERAGE \
+		CDEF:sizeKB=size,1024,* \
+		AREA:sizeKB\#${COLOR}88 \
+		LINE1:sizeKB\#000000 > /dev/null
+	
+	# Monthly image
+	
+	rrdtool graph $IMGMONTH \
+		--start -1m \
+		-l 0 \
+		DEF:size=$RRD:size:AVERAGE \
+		CDEF:sizeKB=size,1024,* \
+		AREA:sizeKB\#${COLOR}88 \
+		LINE1:sizeKB\#000000 > /dev/null
+	
+	# Anual image
+	
+	rrdtool graph $IMGYEAR \
+		--start -1y \
+		-l 0 \
+		DEF:size=$RRD:size:AVERAGE \
+		CDEF:sizeKB=size,1024,* \
+		AREA:sizeKB\#${COLOR}88 \
+		LINE1:sizeKB\#000000 > /dev/null
+}
+
+#
+# Plot graphs
+#
+
+PKGS=$BASE/etc/report.pkgs
+
+RRDBASE=$BASE/log/mirror-size
+IMGBASE=$BASE/data/report/mirror-size
+mkdir -p $IMGBASE
+
+get_content $PKGS | while read pkg
+do
+	plot $pkg
+done
+
+#
+# Plot combined graph
+#
+
+# XXX: seems we have to write the loop like this.
+#      using get_content .. | while read .. wont work :(
+for pkg in `grep -v '^\s*#' $PKGS | sort -u`
+do
+	RRD=$RRDBASE/$pkg.rrd
+	COLOR=`get_color $pkg`
+
+	# FIXME: keep the spaces as they are
+	TITLE=`get_value $BASE/pkgs/$pkg/name`
+
+	cpkg=`echo $pkg | sed 's/\./-/g'`
+	PARAM="$PARAM DEF:size-$cpkg=$RRD:size:AVERAGE AREA:size-$cpkg#${COLOR}:\"$TITLE\":STACK"
+done
+
+IMGWEEK=$IMGBASE/+all.week.png
+IMGMONTH=$IMGBASE/+all.month.png
+IMGYEAR=$IMGBASE/+all.year.png
+
+eval rrdtool graph $IMGWEEK \
+	--start -1w \
+	-l 0 \
+	-w 600 -h 350 \
+	$PARAM > /dev/null
+
+eval rrdtool graph $IMGMONTH \
+	--start -1m \
+	-l 0 \
+	-w 600 -h 350 \
+	$PARAM > /dev/null
+
+eval rrdtool graph $IMGYEAR \
+	--start -1y \
+	-l 0 \
+	-w 600 -h 350 \
+	$PARAM > /dev/null
+

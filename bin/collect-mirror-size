@@ -1,0 +1,94 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+#
+# Functions
+#
+
+ensure_rrd () {
+	RRD=$1
+
+	[ -f "$RRD" ] && return 0
+
+	NOW=`date "+%s"`
+	INTERVAL=86400
+	INTERVAL3=$(( INTERVAL * 3 ))
+	START=$(( NOW - 3 * INTERVAL ))
+	HIYEAR=$(( 366 * 5 ))
+	LOYEAR=$(( 52 * 15 ))
+
+	rrdtool create "$RRD" \
+		--step $INTERVAL \
+		--start $START \
+		DS:size:GAUGE:$INTERVAL3:0:U \
+		RRA:AVERAGE:0.5:1:$HIYEAR \
+		RRA:AVERAGE:0.5:7:$LOYEAR \
+		RRA:MIN:0.5:7:$LOYEAR \
+		RRA:MAX:0.5:7:$LOYEAR
+}
+
+update_rrd () {
+	RRD=$1
+	NOW=$2
+	VAL=$3
+
+	rrdtool update "$RRD" $NOW:$VAL
+}
+
+
+#
+# Check lock
+#
+
+mkdir -p $BASE/data/lock/
+LOCK=$BASE/data/lock/collect-mirror-size-$HOST
+
+trap 'do_unlock "$LOCK"' 1 2 3 6
+
+do_lock "$LOCK"
+if [ "$?" -ne "0" ]; then
+	exit 1
+fi
+
+#
+# Get mirror size
+#
+
+NODEDIR=$BASE/nodes/$NODE
+#PKGS=$NODEDIR/pkgs
+PKGS=$BASE/etc/report.pkgs
+PKGBASE=$BASE/pkgs
+LOGBASE=$BASE/log/mirror-size
+
+mkdir -p $LOGBASE
+
+get_content $PKGS | while read pkg
+do
+	TARGET=`get_value $BASE/pkgs/$pkg/target`
+	SIZE=`nice -n 9 du -s $TARGET/ | awk '{ print $1 }'`
+
+	NOW=`date "+%s"`
+
+	RRD=$LOGBASE/$pkg.rrd
+	LOG=$LOGBASE/$pkg.log
+
+	ensure_rrd "$RRD"
+	update_rrd "$RRD" "$NOW" "$SIZE"
+
+	echo $NOW $SIZE >> $LOG
+done
+
+#
+# Unlock
+#
+
+do_unlock "$LOCK"
+

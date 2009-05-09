@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+#
+# Functions
+#
+
+ensure_rrd () {
+	RRD=$1
+
+	[ -f "$RRD" ] && return 0
+
+	NOW=`date "+%s"`
+	INTERVAL=86400
+	INTERVAL3=$(( INTERVAL * 3 ))
+	START=$(( NOW - 3 * INTERVAL ))
+	HIYEAR=$(( 366 * 5 ))
+	LOYEAR=$(( 52 * 15 ))
+
+	rrdtool create "$RRD" \
+		--step $INTERVAL \
+		--start $START \
+		DS:size:GAUGE:$INTERVAL3:0:U \
+		RRA:AVERAGE:0.5:1:$HIYEAR \
+		RRA:AVERAGE:0.5:7:$LOYEAR \
+		RRA:MIN:0.5:7:$LOYEAR \
+		RRA:MAX:0.5:7:$LOYEAR
+}
+
+update_rrd () {
+	RRD=$1
+	NOW=$2
+	VAL=$3
+
+	rrdtool update "$RRD" $NOW:$VAL
+}
+
+
+#
+# Check lock
+#
+
+mkdir -p $BASE/data/lock/
+LOCK=$BASE/data/lock/collect-disk$HOST
+
+trap 'do_unlock "$LOCK"' 1 2 3 6
+
+do_lock "$LOCK"
+if [ "$?" -ne "0" ]; then
+	exit 1
+fi
+
+#
+# Get mirror size
+#
+
+DISKS=$BASE/nodes/$NODE/disks
+OUTDIR=$BASE/log/disk-usage
+OUT=$OUTDIR/ftp.txt
+LOGBASE=$BASE/log/mirror-size
+disk=/ftp/
+mkdir -p $OUTDIR
+TS=`date '+%Y%m%d.%H%M%S'`
+
+	echo -n "$TS " >> $OUT
+	SIZE=`nice -n 9 du -s $disk | awk '{ print $1 }'` #>> $OUT
+
+	NOW=`date "+%s"`
+
+	RRD=$LOGBASE/ftp.rrd
+	LOG=$LOGBASE/ftp.log
+
+	ensure_rrd "$RRD"
+	update_rrd "$RRD" "$NOW" "$SIZE"
+
+	echo $NOW $SIZE >> $LOG
+
+
+#
+# Unlock
+#
+
+do_unlock "$LOCK"
+

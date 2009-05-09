@@ -1,0 +1,5 @@
+*-Alpha*/
+ppc/
+ppc64/
+*ppc*.iso
+.timestamp_invisible

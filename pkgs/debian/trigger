@@ -1,0 +1,17 @@
+#! /bin/sh
+#. $BASE/lib/common.sh
+SECRET="$BASE/secret"
+if [ -d "$HOME/.ssh" ]; then
+	SECRET="$HOME/.ssh"
+fi
+
+trigger () {
+  echo Signalling $1
+  ssh -o "StrictHostKeyChecking no" -o "BatchMode yes" -o "User $2" "$1" -i $SECRET/id_rsa-ubuntu sleep 1
+}
+
+TRIGGER_MIRRORS="mugos.ums.ac.id"
+
+for host in $TRIGGER_MIRRORS ; do
+	trigger $host ftpsync
+done

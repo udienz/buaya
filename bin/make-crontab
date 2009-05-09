@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+NODEDIR=$BASE/nodes/$NODE
+PKGS=$NODEDIR/pkgs
+CRON=$BASE/data/cron/$NODE.cron
+
+mkdir -p $NODEDIR
+[ -f $PKGS ] || touch $PKGS
+
+exec 3>&1
+exec 1>$CRON
+
+echo "### BEGIN SEDOT CRONTAB LIST"
+echo
+echo "## lines between the SEDOT CRONTAB LIST markers will be modified"
+echo "## by the sedot update-crontab script."
+echo
+echo "## Generated at `date`"
+echo
+echo "## Node: $NODE"
+echo 
+echo "SEDOT_BASE=$BASE"
+echo
+
+if [ -f $NODEDIR/cron ]; then
+	echo "### $NODE's cron"
+	echo
+
+	cat $NODEDIR/cron
+	echo
+fi
+
+echo "### Packages"
+echo
+grep -v '^\s*#' $PKGS | while read pkg
+do
+	if [ -f $BASE/pkgs/$pkg/cron ]; then
+	cron=`get_value $BASE/pkgs/$pkg/cron`
+	echo "# $pkg"
+	echo "$cron \$SEDOT_BASE/bin/sedot $pkg > /dev/null 2>&1"
+	echo
+	fi
+done
+
+
+echo
+echo "### END SEDOT CRONTAB LIST"
+
+exec 1>&3
+

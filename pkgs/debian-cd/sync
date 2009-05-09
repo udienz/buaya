@@ -1,0 +1,100 @@
+#! /bin/bash
+
+if [[ ! -f $PKGDIR/debian-cd-mirror.conf ]]; then
+	echo "No $PKGDIR/debian-cd-mirror.conf !"
+	exit 4
+fi
+
+. $HOME/etc/debian-cd-mirror.conf
+
+export RSYNC_PASSWORD
+#PATH=$HOME/bin:/usr/gnu/bin:/usr/local/bin:/usr/bin:/bin
+export PATH
+
+HOST=`hostname -f`
+
+LOGFILE=$LOGDIR/debian-cd-mirror.log
+# Get in the right directory and set the umask to be group writable
+# 
+cd $HOME
+umask 022
+
+
+
+rsync -avH \
+     	--timeout 7200 \
+     	--include "*-live/" \
+	--exclude alpha/ \
+	--exclude arm/ \
+	--exclude armel/ \
+	--exclude hppa/ \
+	--exclude ia64/ \
+	--exclude mips/ \
+	--exclude mipsel/ \
+	--exclude powerpc/ \
+	--exclude s390/ \
+	--exclude sparc/ \
+     	--exclude "*.iso" \
+     $SOURCE/ $TARGET/
+
+echo "##############################################"
+echo -n "jigdo rsync done, now generating images. at "
+date
+
+typeset currentVersion=`ls -l $TARGET/current`
+currentVersion="${currentVersion##* -> }"
+
+mkdir $tmpDir
+
+versionDir="$TARGET/${currentVersion}"
+
+for a in ${versionDir}/*/; do
+	arch=`basename $a`
+	sets=`cat $TARGET/project/build/${currentVersion}/${arch}`
+	for s in $sets; do
+		typeset jigdoDir=$TARGET/${currentVersion}/${arch}/jigdo-${s}
+		typeset imageDir=$TARGET/${currentVersion}/${arch}/iso-${s}
+		if [[ ! -d $imageDir ]]; then
+			echo "Creating $imageDir" 
+			mkdir -p $imageDir
+		fi
+		cp $jigdoDir/MD5SUMS $imageDir/MD5SUMS
+		echo "jigdoDir=$jigdoDir" > $jigdoConf.$arch.$s
+		echo "imageDir=$imageDir" >> $jigdoConf.$arch.$s
+		echo "tmpDir=$tmpDirBase/$arch.$s" >> $jigdoConf.$arch.$s
+		echo "logfile=${LOGDIR}/$arch.$s.log" >> $jigdoConf.$arch.$s
+		cat ${jigdoConf}.in >> $jigdoConf.$arch.$s
+		echo -n "jigdoing $arch-$s, starting at " 
+		date 
+		jigdo-mirror $jigdoConf.$arch.$s 
+	done
+done
+#savelog ${LOGDIR}/*.log 
+
+echo -n "jigdo-mirror done, now doing final rsync. at " 
+date 
+
+
+rsync -avH --delete --delete-after --delete-excluded \
+     --existing \
+     --timeout 7200 --size-only\
+     --exclude "Archive-Update-in-Progress-${HOST}" \
+	--exclude alpha/ \
+	--exclude arm/ \
+	--exclude armel/ \
+	--exclude hppa/ \
+	--exclude ia64/ \
+	--exclude mips/ \
+	--exclude mipsel/ \
+	--exclude powerpc/ \
+	--exclude s390/ \
+	--exclude sparc/ \
+     $SOURCE/ $TARGET/
+
+echo -n "second sync with delete done at "
+date
+
+
+rm -f $LOCK > /dev/null 2>&1
+
+date -u > "$TARGET/project/trace/$HOST"

@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+cd /ftp/
+
+lslR=`mktemp .temp/ls-lR.XXXXXX`
+trap "rm -f $lslR $lslR.gz" EXIT
+
+ls -lRh /ftp/ > $lslR
+chmod a+r $lslR
+gzip < $lslR > $lslR.gz
+mv $lslR ls-lRh
+mv $lslR.gz ls-lRh.gz

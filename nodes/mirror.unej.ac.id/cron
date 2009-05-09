@@ -1,0 +1,1 @@
+*/15 * * * * $SEDOT_BASE/bin/make-report > /dev/null 2>&1

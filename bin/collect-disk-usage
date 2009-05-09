@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+#
+# Collect disk usage
+#
+
+# Check lock
+
+LOCK=$BASE/data/lock/collect-disk-usage-$HOST
+
+trap 'do_unlock "$LOCK"' 1 2 3 6
+
+do_lock "$LOCK"
+if [ "$?" -ne "0" ]; then
+	exit 1
+fi
+
+# Get disk usage
+
+DISKS=$BASE/nodes/$NODE/disks
+OUTDIR=$BASE/log/disk-usage/$NODE
+OUT=$OUTDIR/`date '+%Y%m'`.txt
+
+[ -f $DISKS ] || exit 1
+
+mkdir -p $OUTDIR
+TS=`date '+%Y%m%d.%H%M%S'`
+
+get_content $DISKS | while read disk
+do
+	echo -n "$TS " >> $OUT
+	df -P | awk "\$1 == \"$disk\" { print \$1 \" \" \$3 \" \" \$4 }" >> $OUT
+done
+
+# Unlock
+
+do_unlock "$LOCK"
+

@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+set -e
+
+if [ -f $PKGDIR/rsync.exclude ]; then
+	EXCLUDE="--exclude-from $PKGDIR/rsync.exclude"
+fi
+
+if [ -f $PKGDIR/rsync.include ]; then
+	INCLUDE="--include-from $PKGDIR/rsync.include"
+fi
+
+echo 1 > $STEPFILE
+
+echo "Synchronization begin at `date -R`..."
+echo "- Source: $SOURCE"
+echo "- Method: RedHat RSYNC"
+
+echo "## Sedot: First stage"
+
+rsync -avh --timeout 3600 --stats --partial \
+	--exclude *.xml --exclude *.xml.gz --exclude .~tmp~/ --exclude timestamp.txt \
+	$EXCLUDE $INCLUDE $SOURCE/ $TARGET/
+
+echo 2 > $STEPFILE
+#sleep 60
+
+echo 3 > $STEPFILE
+echo "## Sedot: Second stage"
+echo "## Sedot: Second stage"
+echo "## Sedot: Second stage"
+echo "##"
+echo "##"
+
+rsync -rltvHSB8192 --timeout 3600 --stats --partial \
+ 	        --exclude timestamp.txt --max-delete=40000 --delay-updates --delete \
+ 	        --delete-after --exclude .~tmp~/ \
+		$EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
+
+echo 5 > $STEPFILE
+date -u > $TARGET/timestamp.txt
+echo "Running on host: `hostname -f`" >> $TARGET/timestamp.txt
+
+echo "Synchronization end at `date -R`..."

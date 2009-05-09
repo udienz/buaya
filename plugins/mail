@@ -1,0 +1,5 @@
+#!/bin/bash
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+	mail -s "$NAME archive $msg" $MAILTO < $LOG 
