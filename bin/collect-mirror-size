@@ -1,9 +1,11 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-. `dirname $0`/../lib/init.sh
-. $BASE/lib/common.sh
+export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
 
-NODE=$1
+. "$BASE/lib/init.sh"
+. "$BASE/lib/common.sh"
+
+NODE="${NODE:-mirror.unej.ac.id}"
 
 if [ "$NODE" == "" ]; then
 	NODE=$HOST

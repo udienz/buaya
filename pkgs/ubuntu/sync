@@ -1,0 +1,3 @@
+#!/bin/bash
+exec $HOME/bin/ftpsync sync:archive:ubuntu
+cat $BASE/log/sync/$PKG/rsync-ftpsync-ubuntu.log.0

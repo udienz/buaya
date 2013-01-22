@@ -1,0 +1,3 @@
+#!/bin/bash
+exec $HOME/bin/ftpsync sync:archive:blankon
+cat $BASE/log/sync/$PKG/rsync-ftpsync-blankon.log

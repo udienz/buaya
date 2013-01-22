@@ -1,7 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-. `dirname $0`/../lib/init.sh
-. $BASE/lib/common.sh
+export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
+
+. "$BASE/lib/init.sh"
+. "$BASE/lib/common.sh"
 
 #
 # Parse arguments
@@ -209,6 +211,9 @@ mail -s "$NAME archive $msg at `date "+%X %d-%B-%Y"`" $MAILTO < $LOG
 
 gzip -9 $LOG
 
+if [ -f $TARGET/Archive-Update-in-Progress-$HOST ]; then
+	rm $TARGET/Archive-Update-in-Progress-$HOST
+fi
 # call custom script
 if [ -f $PKGDIR/script ]; then
 	echo "Call downstream"

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+cd $TARGET
+
+lftp -e "mirror --delete --only-newer --verbose" $SOURCE

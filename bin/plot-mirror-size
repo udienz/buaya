@@ -1,9 +1,11 @@
 #!/bin/bash
 
-. `dirname $0`/../lib/init.sh
-. $BASE/lib/common.sh
+export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
 
-NODE=$1
+. "$BASE/lib/init.sh"
+. "$BASE/lib/common.sh"
+
+NODE="${NODE:-mirror.unej.ac.id}"
 
 if [ "$NODE" == "" ]; then
 	NODE=$HOST
@@ -27,7 +29,7 @@ plot () {
 	IMGYEAR=$IMGBASE/$PKG.year.png
 
 	COLOR=`get_color $PKG`
-	TITLE=`get_value $BASE/pkgs/$PKG/name`
+	TITLE=`get_value /srv/mirror.unej.ac.id/status//pkgs/$PKG/name`
 
 	# Weekly image
 	
@@ -64,10 +66,10 @@ plot () {
 # Plot graphs
 #
 
-PKGS=$BASE/etc/report.pkgs
+PKGS=/srv/mirror.unej.ac.id/status//etc/report.pkgs
 
-RRDBASE=$BASE/log/mirror-size
-IMGBASE=$BASE/data/report/mirror-size
+RRDBASE=/srv/mirror.unej.ac.id/status//log/mirror-size
+IMGBASE=/srv/mirror.unej.ac.id/status//data/report/mirror-size
 mkdir -p $IMGBASE
 
 get_content $PKGS | while read pkg
@@ -87,7 +89,7 @@ do
 	COLOR=`get_color $pkg`
 
 	# FIXME: keep the spaces as they are
-	TITLE=`get_value $BASE/pkgs/$pkg/name`
+	TITLE=`get_value /srv/mirror.unej.ac.id/status//pkgs/$pkg/name`
 
 	cpkg=`echo $pkg | sed 's/\./-/g'`
 	PARAM="$PARAM DEF:size-$cpkg=$RRD:size:AVERAGE AREA:size-$cpkg#${COLOR}:\"$TITLE\":STACK"

@@ -1,4 +1,0 @@
-0 3 * * * $SEDOT_BASE/bin/collect-mirror-size > /dev/null 2>&1
-0 5 * * * $SEDOT_BASE/bin/plot-mirror-size > /dev/null 2>&1
-0 0 * * * $SEDOT_BASE/bin/update-ls-lRh > /dev/null 2>&1
-0 */6 * * * $SEDOT_BASE/bin/analize.rsync < $SEDOT_BASE/log/rsync/rsync-all.log > $SEDOT_BASE/log/rsync/clf.log && /usr/bin/webalizer -c $SEDOT_BASE/data/webalizer/webalizer-rsync.conf

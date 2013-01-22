@@ -1,6 +1,8 @@
 ppc.*/
+ppc.*/
 ppc/
-7/
-8/
 development/
 test/
+**/[0-9][0-9]-Alpha/
+**/[0-9][-9]-Beta/
+**/test/

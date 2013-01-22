@@ -1,4 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
+
+. "$BASE/lib/init.sh"
+. "$BASE/lib/common.sh"
 
 set -e
 
@@ -33,7 +38,7 @@ echo "##"
 echo "##"
 
 rsync -rltvHSB8192 --timeout 3600 --stats --partial \
- 	        --exclude timestamp.txt --max-delete=40000 --delay-updates --delete \
+ 	        --exclude timestamp.txt --max-delete=400000 --delay-updates --delete \
  	        --delete-after --exclude .~tmp~/ \
 		$EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
 

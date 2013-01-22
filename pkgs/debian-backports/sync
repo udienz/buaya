@@ -1,0 +1,3 @@
+#!/bin/bash
+exec $HOME/bin/ftpsync sync:archive:debian-backports
+cat $BASE/log/sync/$PKG/rsync-ftpsync-debian.log.0

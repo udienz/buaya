@@ -1,100 +1,43 @@
-#! /bin/bash
+#!/bin/bash
 
-if [[ ! -f $PKGDIR/debian-cd-mirror.conf ]]; then
-	echo "No $PKGDIR/debian-cd-mirror.conf !"
-	exit 4
-fi
-
-. $HOME/etc/debian-cd-mirror.conf
-
-export RSYNC_PASSWORD
-#PATH=$HOME/bin:/usr/gnu/bin:/usr/local/bin:/usr/bin:/bin
-export PATH
-
-HOST=`hostname -f`
-
-LOGFILE=$LOGDIR/debian-cd-mirror.log
-# Get in the right directory and set the umask to be group writable
-# 
-cd $HOME
-umask 022
-
-
-
-rsync -avH \
+rsync -avHh --stats \
      	--timeout 7200 \
      	--include "*-live/" \
-	--exclude alpha/ \
-	--exclude arm/ \
-	--exclude armel/ \
-	--exclude hppa/ \
-	--exclude ia64/ \
-	--exclude mips/ \
-	--exclude mipsel/ \
-	--exclude powerpc/ \
-	--exclude s390/ \
-	--exclude sparc/ \
      	--exclude "*.iso" \
-     $SOURCE/ $TARGET/
+	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
 
-echo "##############################################"
-echo -n "jigdo rsync done, now generating images. at "
-date
+DIR="/ftp/debian-cd/current/"
+#arch="amd64 armel i386 kfreebsd-amd64 kfreebsd-i386 multiarch powerpc source"
+arch=$(ls /ftp/debian-cd/current)
+tempDir=/ftp/.temp/
 
-typeset currentVersion=`ls -l $TARGET/current`
-currentVersion="${currentVersion##* -> }"
+if [ ! -d $tempDir ]; then
+	mkdir -p $tempDir
+fi
 
-mkdir $tmpDir
-
-versionDir="$TARGET/${currentVersion}"
-
-for a in ${versionDir}/*/; do
-	arch=`basename $a`
-	sets=`cat $TARGET/project/build/${currentVersion}/${arch}`
-	for s in $sets; do
-		typeset jigdoDir=$TARGET/${currentVersion}/${arch}/jigdo-${s}
-		typeset imageDir=$TARGET/${currentVersion}/${arch}/iso-${s}
-		if [[ ! -d $imageDir ]]; then
-			echo "Creating $imageDir" 
-			mkdir -p $imageDir
-		fi
-		cp $jigdoDir/MD5SUMS $imageDir/MD5SUMS
-		echo "jigdoDir=$jigdoDir" > $jigdoConf.$arch.$s
-		echo "imageDir=$imageDir" >> $jigdoConf.$arch.$s
-		echo "tmpDir=$tmpDirBase/$arch.$s" >> $jigdoConf.$arch.$s
-		echo "logfile=${LOGDIR}/$arch.$s.log" >> $jigdoConf.$arch.$s
-		cat ${jigdoConf}.in >> $jigdoConf.$arch.$s
-		echo -n "jigdoing $arch-$s, starting at " 
-		date 
-		jigdo-mirror $jigdoConf.$arch.$s 
+for a in $arch
+	do
+	mkdir $tempDir/$a/ -p
+	echo -e "\nJigdoing CD Set\n"
+	type="cd dvd"
+	for b in $type
+		do
+		cat > $tempDir/"debian-$a-$b.conf" <<EOF
+jigdoDir=$DIR/$a/jigdo-$b/
+imageDir=$DIR/$a/iso-$b/
+tmpDir=$tempDir/$a/
+templateDir=$DIR/$a/jigdo-$b/
+logfile=$tempDir/$a.$b.log
+EOF
+		jigdo-mirror $tempDir/"debian-$a-$b.conf"
 	done
+#	jigdo-lite --noask ../"jigdo-cd"/*.jigdo
+ #       cd $DIR/$a/"iso-dvd"/
+  #      jigdo-lite --noask ../"jigdo-dvd"/*.jigdo
 done
-#savelog ${LOGDIR}/*.log 
 
-echo -n "jigdo-mirror done, now doing final rsync. at " 
-date 
+rsync -avH --stats --delete --delete-after \
+     	--timeout 7200 --size-only\
+	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
 
-
-rsync -avH --delete --delete-after --delete-excluded \
-     --existing \
-     --timeout 7200 --size-only\
-     --exclude "Archive-Update-in-Progress-${HOST}" \
-	--exclude alpha/ \
-	--exclude arm/ \
-	--exclude armel/ \
-	--exclude hppa/ \
-	--exclude ia64/ \
-	--exclude mips/ \
-	--exclude mipsel/ \
-	--exclude powerpc/ \
-	--exclude s390/ \
-	--exclude sparc/ \
-     $SOURCE/ $TARGET/
-
-echo -n "second sync with delete done at "
-date
-
-
-rm -f $LOCK > /dev/null 2>&1
-
-date -u > "$TARGET/project/trace/$HOST"
+echo "Done"

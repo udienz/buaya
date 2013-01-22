@@ -1,4 +1,9 @@
-#!/usr/bin/env bash
+#!/bin/bash
+
+export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
+
+. "$BASE/lib/init.sh"
+. "$BASE/lib/common.sh"
 
 set -e
 
@@ -53,7 +58,7 @@ echo "## Sedot: Second stage"
 echo "##"
 
 rsync -avhH --timeout 3600 --stats --chmod=a+rX,u+w,og-w \
- 	        --exclude project/trace/$HOSTNAME --max-delete=4000 --delay-updates --delete \
+ 	        --exclude project/trace/$HOSTNAME --delay-updates --delete \
  	        --delete-after --delete-excluded  --exclude .~tmp~/ \
 		$jangan $DRYRUNOPT $EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
 
