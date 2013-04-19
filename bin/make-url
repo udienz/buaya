@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+	NODE=$HOST
+fi
+
+NODEDIR=$BASE/nodes/$NODE
+PKGS=$NODEDIR/pkgs
+PIDDIR=$BASE/var/run
+
+#
+# Cleanup lock files
+#
+
+grep -v '^\s*#' $PKGS | while read pkg
+do
+	PKGDIR=$BASE/pkgs/$pkg
+	TARGET=`get_value "$PKGDIR/target"`
+	LOCKFILE="$TARGET/.SYNC-in-Progress-$HOST"
+	TARGETREL=$(echo $TARGET | sed 's/\/ftp/buaya.klas.or.id/g')
+	PIDFILE=$PIDDIR/sedot-$pkg.pid
+	cat > $PKGDIR/url <<EOF
+`echo "http://$TARGETREL"`
+`echo "ftp://$TARGETREL"`
+EOF
+
+done
+
