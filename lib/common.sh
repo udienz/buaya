@@ -1,8 +1,3 @@
-#!/bin/bash
-
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-NODE="${NODE:-mirror.unej.ac.id}"
 
 PATH=$BASE/bin:$PATH
 

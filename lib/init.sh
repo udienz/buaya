@@ -1,8 +1,6 @@
-#!/bin/bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-NODE="${NODE:-mirror.unej.ac.id}"
+BASE=$( cd `dirname $0`/../; pwd )
+HOST=`hostname -f`
 
 . $BASE/etc/config.sh
 

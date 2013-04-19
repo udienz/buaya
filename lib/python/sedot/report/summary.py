@@ -143,7 +143,7 @@ class SummaryGenerator(Generator):
 				size = "unknown"
 
 			locked = ""
-			if glob.glob(os.path.join(package.target, 'Archive-Update-in-Progress-*')):
+			if glob.glob(os.path.join(package.target, '.SYNC-in-Progress-*')):
 				locked = """<img class="lock" alt="locked" src="img/lock.png"/>"""
 
 			out.write(template.substitute(

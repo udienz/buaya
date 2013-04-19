@@ -10,7 +10,7 @@ trigger () {
   ssh -o "StrictHostKeyChecking no" -o "BatchMode yes" -o "User $2" "$1" -i $SECRET/id_rsa-ubuntu sleep 1
 }
 
-TRIGGER_MIRRORS="mugos.ums.ac.id"
+TRIGGER_MIRRORS=""
 
 for host in $TRIGGER_MIRRORS ; do
 	trigger $host ftpsync

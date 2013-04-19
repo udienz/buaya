@@ -11,7 +11,6 @@ class Generator:
 		self.outdir = outdir
 		self.report_name = "Status"
 		self.output_file = "index.html"
-		self.output_file_tmp = ".index.html.tmp"
 
 		global SEDOT_CONFIG
 		self.name = SEDOT_CONFIG.get('MIRROR_NAME', None)
@@ -26,7 +25,8 @@ class Generator:
 		self.generators = generators
 
 	def generate(self):
-		file = os.path.join(self.outdir, self.output_file_tmp)
+		tmp = ".%s.tmp" % self.output_file
+		file = os.path.join(self.outdir, tmp)
 		f = open(file, "w")
 		self._print_page_header(f)
 		self._print_report(f)
@@ -125,7 +125,6 @@ class Generator:
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html><head>
 <title>%s</title>
-<meta http-equiv="refresh" content="950" />
 <link rel="stylesheet" type="text/css" href="style.css"/>
 </head><body><div id="c">
 
@@ -142,8 +141,7 @@ class Generator:
 		out.write("""
 </div>
 <div id="footer">
-	<p id="generated">Last update: %s 
-	Other Report <a href="rsync/index.html">Rsync</a> <a href="apache/index.html">Apache</a></p>
+	<p id="generated">Last update: %s</p>
 	<p id="sedot"><a href="https://launchpad.net/sedot">Sedot sampai tua!</a> &trade;</p>
 </div>
 </div></body></html>""" % (update_time))
