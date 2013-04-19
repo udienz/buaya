@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
 
 set -e
 
@@ -15,60 +13,24 @@ if [ -f $PKGDIR/rsync.include ]; then
 	INCLUDE="--include-from $PKGDIR/rsync.include"
 fi
 
-if [ -f $PKGDIR/arch.exclude ]; then
-	. $PKGDIR/arch.exclude
-	export ARCH_EXCLUDE
-	# Exclude architectures defined in $ARCH_EXCLUDE
-	for ARCH in $ARCH_EXCLUDE; do
-	jangan="--exclude binary-$ARCH/ \
-		--exclude disks-$ARCH/ \
-		--exclude installer-$ARCH/ \
-		--exclude Contents-$ARCH.gz \
-		--exclude Contents-$ARCH.diff/ \
-		--exclude arch-$ARCH.files \
-		--exclude arch-$ARCH.list.gz \
-		--exclude *_$ARCH.deb \
-		--exclude *_$ARCH.udeb "
-	if [ "$ARCH" = "source" ]; then
-		SOURCE_EXCLUDE="\
-		--exclude source/ \
-		--exclude *.tar.gz \
-		--exclude *.diff.gz \
-		--exclude *.dsc "
-	fi
-	done
+if [ $DRYRUN == "1" ]; then
+	DRYRUNOPT="--dry-run"
 fi
 
 echo 1 > $STEPFILE
-
-echo "Synchronization begin at `date -R`..."
-
 echo "## Sedot: First stage"
-echo "##"
-
-rsync -avhH --timeout 3600 --stats --partial --chmod=a+rX,u+w,og-w \
-	--exclude Packages* --exclude Sources* --exclude Release* --exclude ls-lR*  --exclude .~tmp~/ \
-	$jangan $EXCLUDE $INCLUDE $SOURCE/ $TARGET/
+rsync -rltpHv --stats --timeout=7200 --delay-updates $DRYRUNOPT $EXCLUDE $INCLUDE $SOURCE/pool/ $TARGET/pool/
 
 echo 2 > $STEPFILE
 #sleep 60
 
 echo 3 > $STEPFILE
 echo "## Sedot: Second stage"
-echo "##"
-
-rsync -avhH --timeout 3600 --stats --chmod=a+rX,u+w,og-w \
- 	        --exclude project/trace/$HOSTNAME --delay-updates --delete \
- 	        --delete-after --delete-excluded  --exclude .~tmp~/ \
-		$jangan $DRYRUNOPT $EXCLUDE $INCLUDE --delete-after $SOURCE/ $TARGET/
+rsync $RSYNCOPTS $EXCLUDE $INCLUDE $SOURCE $TARGET
 
 echo 4 > $STEPFILE
 mkdir -p $TARGET/project/trace/
 
 echo 5 > $STEPFILE
 date -u > $TARGET/project/trace/`hostname -f`
-echo "Used SEDOT" >> $TARGET/project/trace/`hostname -f`
-echo "Running on host: `hostname -f`" >> $TARGET/project/trace/`hostname -f`
 
-echo "Synchronization end at `date -R`..."
- 

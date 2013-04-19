@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
 
 NODE=$1
 
@@ -43,16 +41,18 @@ fi
 
 echo "### Packages"
 echo
+
 grep -v '^\s*#' $PKGS | while read pkg
 do
 	if [ -f $BASE/pkgs/$pkg/cron ]; then
-	cron=`get_value $BASE/pkgs/$pkg/cron`
-	echo "# $pkg"
-	echo "$cron \$SEDOT_BASE/bin/sedot $pkg > /dev/null 2>&1"
-	echo
+		cron=`get_value $BASE/pkgs/$pkg/cron`
+		if [ ! -z "$cron" ]; then
+			echo "# $pkg"
+			echo "$cron \$SEDOT_BASE/bin/sedot $pkg > /dev/null 2>&1"
+			echo
+		fi
 	fi
 done
-
 
 echo
 echo "### END SEDOT CRONTAB LIST"

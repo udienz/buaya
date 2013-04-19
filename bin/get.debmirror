@@ -1,9 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. $BASE/lib/common.sh
 
 set -e
 
@@ -38,6 +35,5 @@ if [ $DRYRUN == "1" ]; then
 fi
 
 echo 1 > $STEPFILE
-#rm $TARGET/Archive-Update-in-Progress-mirror.unej.ac.id
 debmirror -v --passive --host=$SOURCE $ROOT $METHOD $DIST $SECTION $ARCH $DRYRUNOPT --ignore-release-gpg --ignore-missing-release $TARGET
-#rm -rf $TARGET/.temp/
+

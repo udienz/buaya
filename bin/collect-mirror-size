@@ -1,11 +1,9 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
 
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
-
-NODE="${NODE:-mirror.unej.ac.id}"
+NODE=$1
 
 if [ "$NODE" == "" ]; then
 	NODE=$HOST
@@ -65,8 +63,7 @@ fi
 #
 
 NODEDIR=$BASE/nodes/$NODE
-#PKGS=$NODEDIR/pkgs
-PKGS=$BASE/etc/report.pkgs
+PKGS=$NODEDIR/pkgs
 PKGBASE=$BASE/pkgs
 LOGBASE=$BASE/log/mirror-size
 
@@ -74,18 +71,20 @@ mkdir -p $LOGBASE
 
 get_content $PKGS | while read pkg
 do
-	TARGET=`get_value $BASE/pkgs/$pkg/target`
-	SIZE=`nice -n 9 du -s $TARGET/ | awk '{ print $1 }'`
+	TARGET=`get_value $PKGBASE/$pkg/target`
+	if [ -d $TARGET ]; then
+		SIZE=`nice -n 9 du -s $TARGET/ | awk '{ print $1 }'`
 
-	NOW=`date "+%s"`
+		NOW=`date "+%s"`
 
-	RRD=$LOGBASE/$pkg.rrd
-	LOG=$LOGBASE/$pkg.log
+		RRD=$LOGBASE/$pkg.rrd
+		LOG=$LOGBASE/$pkg.log
 
-	ensure_rrd "$RRD"
-	update_rrd "$RRD" "$NOW" "$SIZE"
+		ensure_rrd "$RRD"
+		update_rrd "$RRD" "$NOW" "$SIZE"
 
-	echo $NOW $SIZE >> $LOG
+		echo $NOW $SIZE >> $LOG
+	fi
 done
 
 #

@@ -1,9 +1,4 @@
-#!/bin/bash
-
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+#!/usr/bin/env bash
 
 set -e
 

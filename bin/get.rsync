@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
 
 set -e
 
@@ -18,21 +16,15 @@ if [ -f $PKGDIR/rsync.include ]; then
 	INCLUDE="--include-from $PKGDIR/rsync.include"
 fi
 
-echo "Synchronization begin at `date -R`..."
-echo "- Source: $SOURCE"
-echo "- Method: RSYNC"
+if [ $DRYRUN == "1" ]; then
+	DRYRUNOPT="--dry-run"
+fi
 
 echo 1 > $STEPFILE
 
 set +e
 
-#rsync -rltpHv --partial --chmod=a+rX,u+w,og-w --stats --timeout=7200 --delay-updates $INCLUDE $EXCLUDE --delete-after $SOURCE $TARGET
-rsync -avhH --timeout 3600 --stats \
- 	        --exclude timestamp.txt --delay-updates --delete \
- 	        --delete-after --delete-excluded  --exclude .~tmp~/ \
-		$DRYRUNOPT $EXCLUDE $INCLUDE $SOURCE/ $TARGET/
-
-echo "Synchronization end at `date -R`..."
+rsync $SOURCE $TARGET $EXCLUDE $INCLUDE $RSYNCOPTS
 
 ERR=$?
 
@@ -42,3 +34,4 @@ if [ $ERR -eq 0 -o $ERR -eq 23 ]; then
 else
 	exit $ERR
 fi
+

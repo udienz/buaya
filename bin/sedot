@@ -1,9 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
 
 #
 # Parse arguments
@@ -43,8 +41,12 @@ LOGBASE=$BASE/log/sync/$PKG
 LOGDIR=$LOGBASE/$TS
 PKGDIR=$BASE/pkgs/$PKG
 
+PID=$$
+PIDFILE=$BASE/var/run/sedot-$PKG.pid
+
 [ -z "$DRYRUN" ] && DRYRUN=0
 
+mkdir -p $LOGDIR
 LOG=$LOGDIR/sync.log
 STATUS=$LOGDIR/status.txt
 
@@ -58,6 +60,10 @@ fi
 [ -z "$SOURCE" ] && SOURCE=`get_value "$PKGDIR/source"`
 [ -z "$TARGET" ] && TARGET=`get_value "$PKGDIR/target"`
 [ -z "$METHOD" ] && METHOD=`get_value "$PKGDIR/method"`
+
+TARGET=$TARGET/
+
+LOCKFILE=$TARGET/.SYNC-in-Progress-$HOST
 
 #
 # Functions
@@ -99,6 +105,11 @@ sedot_exit () {
 	exit $code
 }
 
+cleanup () {
+	do_unlock $LOCKFILE
+	rm $PIDFILE
+}
+
 #
 # Preliminary checking
 #
@@ -127,17 +138,18 @@ if [ ! -d "$TARGET" ]; then
 fi
 
 #
-# Syncronize!
+# Synchronize!
 #
 
-mkdir -p $LOGDIR
 STEPFILE=$LOGDIR/step
+
+echo $PID > $PIDFILE
 
 echo 0 > $STEPFILE
 
-trap 'do_unlock "$TARGET/Archive-Update-in-Progress-$HOST"' 1 2 3 6
+trap 'cleanup' 1 2 3 6
 
-do_lock $TARGET/Archive-Update-in-Progress-$HOST
+do_lock $LOCKFILE
 if [ "$?" -ne "0" ]; then
 	write_status "301" "Unable to gain lock"
 	sedot_exit 301
@@ -156,6 +168,7 @@ write_status "100" "In progress"
 
 (
 set +e
+
 export BASE
 export SOURCE
 export TARGET
@@ -172,7 +185,7 @@ echo $? > $LOGDIR/return.txt
 RET=`cat $LOGDIR/return.txt`
 TIME_FINISH=`date -R`
 
-do_unlock $TARGET/Archive-Update-in-Progress-$HOST
+cleanup
 
 #
 # Write status
@@ -207,29 +220,11 @@ if [ "$RET" -ne "0" ]; then
 	tail -n 50 $LOG > $LOG.last.txt
 fi
 
-mail -s "$NAME archive $msg at `date "+%X %d-%B-%Y"`" $MAILTO < $LOG
-
 gzip -9 $LOG
-
-if [ -f $TARGET/Archive-Update-in-Progress-$HOST ]; then
-	rm $TARGET/Archive-Update-in-Progress-$HOST
-fi
-# call custom script
-if [ -f $PKGDIR/script ]; then
-	echo "Call downstream"
-	$PKGDIR/script
-fi
-
-# call downstream mirror
-if [ -f $PKGDIR/trigger ]; then
-	echo "Call downstream"
-	$PKGDIR/trigger
-fi
 
 #
 # Call plugins
 #
-
 
 if [ -f $BASE/etc/post-sync-plugins ]; then
 	PLUGINDIR=$BASE/plugins

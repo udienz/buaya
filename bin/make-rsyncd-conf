@@ -1,0 +1,65 @@
+#!/bin/bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+NODE=$1
+
+if [ "$NODE" == "" ]; then
+        NODE=$HOST
+fi
+
+BASE="/srv/buaya.klas.or.id/status/"
+NODEDIR=$BASE/nodes/$NODE
+PKGS=$BASE/etc/report.pkgs
+RSYNCDIR=$BASE/etc/
+RSYNC=$RSYNCDIR/rsyncd.conf
+RSYNCOLD=$RSYNCDIR/$NODE.rsync.old
+
+if test -d $NODEDIR;
+        then EXISTS="yes"
+else
+        mkdir -p $NODEDIR
+fi
+
+if test -d $RSYNCDIR;
+        then EXISTS="yes"
+else
+        mkdir -p $RSYNCDIR
+fi
+
+#[ -f $PKGS ] || touch $PKGS
+
+exec 3>&1
+exec 1>$RSYNC
+
+cat $RSYNCDIR/rsyncd.basic
+
+echo "### BEGIN SEDOT RSYNC LIST"
+echo
+echo "## lines between the SEDOT RSYNC LIST markers will be modified"
+echo "## by the sedot update-rsync script."
+echo
+echo "## Generated at `date`"
+echo
+echo "## Node: $NODE, BASE: $BASE"
+echo 
+
+grep -v '^\s*#' $PKGS | while read pkg
+do
+
+        echo "[$pkg]"
+        PATHPKGS=`get_value $BASE/pkgs/$pkg/target`
+        echo "path = $PATHPKGS"
+        SRCPKGS=`get_value $BASE/pkgs/$pkg/source`
+        NAMEPKGS=`get_value $BASE/pkgs/$pkg/name`
+        echo "comment = $NAMEPKGS"
+        echo
+
+done
+
+echo
+echo "### END SEDOT RSYNC LIST"
+
+exec 1>&3
+

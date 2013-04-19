@@ -1,9 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-export BASE="${BASE:-/srv/mirror.unej.ac.id/status}"
-
-. "$BASE/lib/init.sh"
-. "$BASE/lib/common.sh"
+. `dirname $0`/../lib/init.sh
 
 set -e
 
@@ -13,13 +10,13 @@ if [ "$NODE" == "" ]; then
 	NODE=$HOST
 fi
 
-NODEDIR=/srv/mirror/status/nodes/$NODE
-CRON=/srv/mirror/status/data/cron/$NODE.cron
+NODEDIR=$BASE/nodes/$NODE
+CRON=$BASE/data/cron/$NODE.cron
 
 # Create crontab file
 
 [ -f $CRON ] && cp $CRON $CRON.old
-/srv/mirror/status/bin/make-crontab $NODE
+$BASE/bin/make-crontab $NODE
 
 # Update crontab
 
