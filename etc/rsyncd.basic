@@ -1,0 +1,12 @@
+log file=/var/log/rsyncd
+pid file=/var/run/rsyncd.pid
+syslog facility=daemon
+timeout=600
+refuse options=checksum dry-run
+dont compress=*.gz *.tgz *.zip *.z *.rpm *.deb *.iso *.bz2 *.tbz
+
+uid=nobody
+gid=nogroup
+exclude=~.tmp~/ .temp/
+transfer logging=yes
+use chroot = yes
