@@ -2,4 +2,4 @@
 /log/*
 /etc/mrtg.*
 *.pyc
-
+etc/*.sample
