@@ -1,43 +1,48 @@
 #!/bin/bash
 
 rsync -avHh --stats \
-     	--timeout 7200 \
-     	--include "*-live/" \
-     	--exclude "*.iso" \
-	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
+        --timeout 7200 \
+        --include "*-live/" \
+        --exclude "*.iso" \
+	--exclude-from=$RSYNC_EXCLUDE \
+        $SOURCE $TARGET/
 
-DIR="/ftp/debian-cd/current/"
-#arch="amd64 armel i386 kfreebsd-amd64 kfreebsd-i386 multiarch powerpc source"
-arch=$(ls /ftp/debian-cd/current)
-tempDir=/ftp/.temp/
+DIR="/srv/$(hostname -f)/www/.sdb1/debian-cd/current/"
+arch="amd64 armel i386 kfreebsd-amd64 kfreebsd-i386"
+#arch=$(ls /ftp/debian-cd/current)
+tempDir="/ftp/.sdb1/.temp/"
 
 if [ ! -d $tempDir ]; then
-	mkdir -p $tempDir
+        mkdir -p $tempDir
 fi
 
 for a in $arch
-	do
-	mkdir $tempDir/$a/ -p
-	echo -e "\nJigdoing CD Set\n"
-	type="cd dvd"
-	for b in $type
-		do
-		cat > $tempDir/"debian-$a-$b.conf" <<EOF
+        do
+        mkdir $tempDir/$a/ -p
+        echo -e "Jigdoing $a CD Set"
+        type="dvd"
+        for b in $type
+                do
+                echo "Jigdoing $a $b"
+                cat > $tempDir/"debian-$a-$b.conf" <<EOF
 jigdoDir=$DIR/$a/jigdo-$b/
 imageDir=$DIR/$a/iso-$b/
 tmpDir=$tempDir/$a/
 templateDir=$DIR/$a/jigdo-$b/
-logfile=$tempDir/$a.$b.log
+logfile=/srv/$(hostname -f)/status/log/sync/debian-cd/current/$a.$b.log
 EOF
-		jigdo-mirror $tempDir/"debian-$a-$b.conf"
-	done
-#	jigdo-lite --noask ../"jigdo-cd"/*.jigdo
+# Disabled due high load, please enable when debian releases new version
+#                jigdo-mirror $tempDir/"debian-$a-$b.conf"
+        done
+#       jigdo-lite --noask ../"jigdo-cd"/*.jigdo
  #       cd $DIR/$a/"iso-dvd"/
   #      jigdo-lite --noask ../"jigdo-dvd"/*.jigdo
 done
-
-rsync -avH --stats --delete --delete-after \
-     	--timeout 7200 --size-only\
-	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
+rsync -avHh --stats \
+        --timeout 7200 --size-only --delete \
+	--exclude-from=$RSYNC_EXCLUDE --delete-excluded \
+        $SOURCE $TARGET
 
 echo "Done"
+echo $(date -u) > $DIR/trace/$(hostname -f)
+

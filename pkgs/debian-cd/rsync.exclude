@@ -1,0 +1,9 @@
+ia64/
+kfreebsd-*/
+mips/
+mipsel/
+powerpc/
+s390/
+s390x/
+sparc/
+debian-*-CD-*.iso

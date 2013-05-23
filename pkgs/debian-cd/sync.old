@@ -1,0 +1,43 @@
+#!/bin/bash
+
+rsync -avHh --stats \
+     	--timeout 7200 \
+     	--include "*-live/" \
+     	--exclude "*.iso" \
+	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
+
+DIR="/ftp/debian-cd/current/"
+#arch="amd64 armel i386 kfreebsd-amd64 kfreebsd-i386 multiarch powerpc source"
+arch=$(ls /ftp/debian-cd/current)
+tempDir=/ftp/.temp/
+
+if [ ! -d $tempDir ]; then
+	mkdir -p $tempDir
+fi
+
+for a in $arch
+	do
+	mkdir $tempDir/$a/ -p
+	echo -e "\nJigdoing CD Set\n"
+	type="cd dvd"
+	for b in $type
+		do
+		cat > $tempDir/"debian-$a-$b.conf" <<EOF
+jigdoDir=$DIR/$a/jigdo-$b/
+imageDir=$DIR/$a/iso-$b/
+tmpDir=$tempDir/$a/
+templateDir=$DIR/$a/jigdo-$b/
+logfile=$tempDir/$a.$b.log
+EOF
+		jigdo-mirror $tempDir/"debian-$a-$b.conf"
+	done
+#	jigdo-lite --noask ../"jigdo-cd"/*.jigdo
+ #       cd $DIR/$a/"iso-dvd"/
+  #      jigdo-lite --noask ../"jigdo-dvd"/*.jigdo
+done
+
+rsync -avH --stats --delete --delete-after \
+     	--timeout 7200 --size-only\
+	cdimage.debian.org::debian-cd/ /ftp/pub/cdimage.debian.org/debian-cd/
+
+echo "Done"

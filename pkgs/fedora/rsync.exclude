@@ -6,3 +6,7 @@ test/
 **/[0-9][0-9]-Alpha/
 **/[0-9][-9]-Beta/
 **/test/
+/core/*
+source/**
+releases/1[123456]/
+

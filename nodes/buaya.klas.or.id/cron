@@ -1,5 +1,6 @@
 */5 * * * * env LANG=C /usr/bin/mrtg $SEDOT_BASE/etc/mrtg.cfg > /dev/null 2>&1
 */15 * * * * $SEDOT_BASE/bin/make-report > /dev/null 2>&1
+0 * * * * /usr/bin/webalizer -c $SEDOT_BASE/etc/webalizer-www.conf > /dev/null 2>&1
 0 3 * * * $SEDOT_BASE/bin/collect-mirror-size > /dev/null 2>&1
 0 5 * * * $SEDOT_BASE/bin/plot-mirror-size > /dev/null 2>&1
 0 0 * * * $SEDOT_BASE/bin/update-ls-lRh > /dev/null 2>&1

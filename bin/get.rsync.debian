@@ -19,14 +19,14 @@ fi
 
 echo 1 > $STEPFILE
 echo "## Sedot: First stage"
-rsync -rltpHv --stats --timeout=7200 --delay-updates $DRYRUNOPT $EXCLUDE $INCLUDE $SOURCE/pool/ $TARGET/pool/
+rsync -rltpHv --ipv4 --stats --timeout=7200 --delay-updates $DRYRUNOPT $EXCLUDE $INCLUDE $SOURCE/pool/ $TARGET/pool/
 
 echo 2 > $STEPFILE
 #sleep 60
 
 echo 3 > $STEPFILE
 echo "## Sedot: Second stage"
-rsync $RSYNCOPTS $EXCLUDE $INCLUDE $SOURCE $TARGET
+rsync $RSYNCOPTS --ipv4  $EXCLUDE $INCLUDE $SOURCE $TARGET
 
 echo 4 > $STEPFILE
 mkdir -p $TARGET/project/trace/
