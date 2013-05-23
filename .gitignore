@@ -3,4 +3,4 @@
 /etc/mrtg.*
 /etc/*.sample
 *.pyc
-
+etc/*.sample
