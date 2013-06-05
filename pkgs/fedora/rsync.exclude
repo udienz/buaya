@@ -8,5 +8,9 @@ test/
 **/test/
 /core/*
 source/**
-releases/1[123456]/
-
+releases/1[1234567]/
+updates/1[1234567]/
+debug/*
+*debuginfo*.rpm
+SRPMS/
+updates/testing/*

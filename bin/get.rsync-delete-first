@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+. `dirname $0`/../lib/init.sh
+. $BASE/lib/common.sh
+
+set -e
+
+EXCLUDE=
+INCLUDE=
+
+if [ -f $PKGDIR/rsync.exclude ]; then
+	EXCLUDE="--exclude-from $PKGDIR/rsync.exclude"
+fi
+
+if [ -f $PKGDIR/rsync.include ]; then
+	INCLUDE="--include-from $PKGDIR/rsync.include"
+fi
+
+if [ $DRYRUN == "1" ]; then
+	DRYRUNOPT="--dry-run"
+fi
+
+echo 1 > $STEPFILE
+
+set +e
+
+rsync $SOURCE $TARGET $EXCLUDE $INCLUDE -avhH --delete --del --stats --ipv4 --delete-excluded
+
+ERR=$?
+
+# rsync's exit 23 is not really an error
+if [ $ERR -eq 0 -o $ERR -eq 23 ]; then
+	exit 0
+else
+	exit $ERR
+fi
+
