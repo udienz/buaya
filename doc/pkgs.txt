@@ -13,4 +13,3 @@ Files inside the directory:
 - method: e.g. rsync.debian                (mandatory)
   - available methods: see bin/get.[methodname]
 
-If you have pull mirror please delete $PKGS/cron

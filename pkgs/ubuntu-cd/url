@@ -1,2 +1,3 @@
-http://buaya.klas.or.id/ubuntu-cd/
-ftp://buaya.klas.or.id/ubuntu-cd/
+http://buaya.klas.or.id/iso/ubuntu-cd/
+ftp://buaya.klas.or.id/iso/ubuntu-cd/
+rsync://buaya.klas.or.id/iso
